@@ -14,9 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         isLogin = !isLogin;
         
-        // Clear errors when switching
         authError.innerText = "";
-        
         nameField.style.display = isLogin ? 'none' : 'block';
         authTitle.innerText = isLogin ? 'Login to MediQueue' : 'Register Account';
         authBtn.innerHTML = isLogin ? '<i class="fas fa-sign-in-alt"></i> Login' : '<i class="fas fa-user-plus"></i> Register';
@@ -29,11 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
-        const name = document.getElementById('regName').value;
+        const name = document.getElementById('regName') ? document.getElementById('regName').value : '';
 
         const endpoint = isLogin ? '/login' : '/register';
         
-        // CORRECTION: Added 'role' to the registration body to match your Server logic
         const body = isLogin 
             ? { email, password } 
             : { name, email, password, role: 'patient' }; 
@@ -48,23 +45,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
 
             if (res.ok) {
+                // ✅ CRITICAL FIX: Save the ENTIRE user object including email
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+
                 if (isLogin) {
-                    // SUCCESSFUL LOGIN: Save data and go to dashboard
-                    localStorage.setItem('token', data.token);
-                    localStorage.setItem('user', JSON.stringify(data.user));
                     window.location.href = 'dashboard.html';
                 } else {
-                    // SUCCESSFUL REGISTRATION: Switch to login mode
-                    alert("Registration successful! Please log in with your new account.");
-                    location.reload(); 
+                    alert("Registration successful! Redirecting to dashboard...");
+                    window.location.href = 'dashboard.html'; 
                 }
             } else {
-                // SERVER ERROR (e.g., "User already exists" or "Invalid credentials")
                 authError.innerText = data.message || "An error occurred.";
             }
         } catch (err) {
-            // NETWORK ERROR (e.g., Server is not running)
-            authError.innerText = "Connection failed. Please ensure the backend server is running on port 5000.";
+            authError.innerText = "Connection failed. Please ensure the backend server is running.";
             console.error("Auth Error:", err);
         }
     });

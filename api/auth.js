@@ -18,8 +18,22 @@ export default async function handler(req, res) {
       user = new User({ name, email, password: hashedPassword, role: role || 'patient' });
       await user.save();
 
-      const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
-      res.status(200).json({ token, user: { id: user._id, name: user.name, role: user.role } });
+      const token = jwt.sign(
+        { id: user._id, role: user.role, email: user.email }, 
+        process.env.JWT_SECRET, 
+        { expiresIn: '1d' }
+      );
+
+      // THE KEY FIX: Sending the email field back to the frontend
+      res.status(200).json({ 
+        token, 
+        user: { 
+          id: user._id, 
+          name: user.name, 
+          role: user.role, 
+          email: user.email // This must match user.email in your MongoDB
+        } 
+      });
     } catch (err) {
       console.error('Registration error:', err);
       res.status(500).json({ message: 'Server error' });

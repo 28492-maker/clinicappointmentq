@@ -122,3 +122,92 @@ button {
 /* Admin Views */
 .admin-controls { margin-bottom: 20px; }
 .admin-view { background: white; padding: 20px; border-radius: 8px; margin-top: 20px; }
+
+/* Doctor Dashboard Container */
+#doctorView {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7f9;
+    border-radius: 12px;
+}
+
+/* The Big Card for the Current Patient */
+.current-patient-card {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.current-patient-card h3 {
+    margin-top: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+#nextPatientInfo {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin: 20px 0;
+}
+
+/* The Action Button */
+#btnNextPatient {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+#btnNextPatient:hover {
+    background-color: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+#btnNextPatient:active {
+    transform: translateY(0);
+}
+
+/* The Upcoming Queue List */
+h3 {
+    color: #333;
+    border-bottom: 2px solid #007bff;
+    display: inline-block;
+    padding-bottom: 5px;
+    margin-bottom: 15px;
+}
+
+#doctorQueueList {
+    list-style: none;
+    padding: 0;
+}
+
+#doctorQueueList li {
+    background: white;
+    margin-bottom: 10px;
+    padding: 15px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    border-left: 5px solid #007bff;
+}
+
+#doctorQueueList li:nth-child(even) {
+    border-left-color: #6c757d;
+}

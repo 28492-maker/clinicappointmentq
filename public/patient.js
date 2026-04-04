@@ -1,44 +1,42 @@
-// 1. Double check this! If you are using Next.js, it might be 3000
-const BASE_URL = 'http://localhost:5000/api'; 
+const DOCTOR_API_URL = 'http://localhost:5000/api/doctors';
+const APPOINTMENT_API_URL = 'http://localhost:5000/api/appointments';
+// New URL for fetching status
+const STATUS_API_URL = 'http://localhost:5000/api/appointments/my'; 
 
-document.addEventListener('DOMContentLoaded', () => {
-    // GUARDRAIL: Check if 'user' exists in storage before parsing
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log("🚀 Patient Dashboard Initializing...");
+
     const userData = localStorage.getItem('user');
-    if (!userData) {
-        console.warn("No user found in localStorage. Redirecting...");
-        // window.location.href = 'login.html'; // Optional: send them to login
+    const token = localStorage.getItem('token');
+
+    if (!userData || !token) {
+        window.location.href = 'index.html';
         return;
     }
 
     const user = JSON.parse(userData);
-    
-    // GUARDRAIL: Ensure user object has the required properties
-    if (!user || user.role !== 'patient') return;
+    const nameDisplay = document.getElementById('userNameDisplay');
+    if (nameDisplay) nameDisplay.innerText = `Welcome, ${user.name}`;
 
-    document.getElementById('patientView')?.classList.remove('hidden');
-    loadDoctors();
-    fetchQueueStatus();
+    // 1. LOAD DOCTORS
+    await loadDoctors();
 
-    setInterval(fetchQueueStatus, 10000);
+    // 2. NEW: LOAD QUEUE STATUS IMMEDIATELY
+    await updateQueueStatus();
 
-    document.getElementById('bookingForm')?.addEventListener('submit', async (e) => {
+    // 3. BOOKING FORM SUBMISSION
+    const bookingForm = document.getElementById('bookingForm');
+    bookingForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // GUARDRAIL: Verify the token exists before fetching
-        const token = localStorage.getItem('token');
-        if (!token) {
-            alert("Session expired. Please log in again.");
-            return;
-        }
-
         const bookingData = {
             doctorId: document.getElementById('doctorSelect').value,
-            date: document.getElementById('appointmentDate').value,
-            time: document.getElementById('appointmentTime').value
+            appointmentDate: document.getElementById('appointmentDate').value,
+            appointmentTime: document.getElementById('appointmentTime').value
         };
 
         try {
-            const res = await fetch(`${BASE_URL}/appointments`, {
+            const res = await fetch(APPOINTMENT_API_URL, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -47,59 +45,63 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(bookingData)
             });
 
-            const data = await res.json(); // Read the response first
-
+            const data = await res.json();
             if (res.ok) {
-                alert("Appointment Booked! Check your email for confirmation.");
-                fetchQueueStatus();
+                alert(`✅ Success! Queue Number: ${data.queueNumber}`);
+                // Refresh the numbers after booking
+                await updateQueueStatus(); 
             } else {
-                alert(data.message || "Booking failed");
+                alert(`❌ Error: ${data.message}`);
             }
         } catch (err) {
-            console.error("Booking failed", err);
-            alert("Network error. Is the server running?");
+            alert("📡 Server connection failed.");
         }
     });
 });
 
-async function loadDoctors() {
-    try {
-        const select = document.getElementById('doctorSelect');
-        const res = await fetch(`${BASE_URL}/doctors`);
-        if (!res.ok) throw new Error("Could not fetch doctors");
-        
-        const doctors = await res.json();
-        
-        // Clear existing options first (except the first one)
-        select.innerHTML = '<option value="">Select a Doctor</option>';
-        
-        doctors.forEach(doc => {
-            const opt = document.createElement('option');
-            opt.value = doc._id;
-            opt.textContent = `Dr. ${doc.name} (${doc.specialization})`;
-            select.appendChild(opt);
-        });
-    } catch (err) {
-        console.error("Load doctors failed:", err);
-    }
-}
+// --- NEW FUNCTION TO SHOW QUEUE NUMBERS ---
+async function updateQueueStatus() {
+    const token = localStorage.getItem('token');
+    // Ensure these IDs match exactly what is in your HTML (e.g., <span id="currentServing">)
+    const currentEl = document.getElementById('currentServing');
+    const positionEl = document.getElementById('userPosition');
 
-async function fetchQueueStatus() {
     try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-
-        const res = await fetch(`${BASE_URL}/queue/status`, {
+        console.log("🔄 Updating Queue Status...");
+        const res = await fetch(STATUS_API_URL, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
-        // SAFETY CATCH: Only update UI if the response is valid
         if (res.ok) {
             const data = await res.json();
-            document.getElementById('currentServing').innerText = data.current || 'None';
-            document.getElementById('userPosition').innerText = data.yourPosition || 'No active booking';
+            
+            // Set the text in the blue boxes
+            if (currentEl) currentEl.innerText = data.current || "--";
+            if (positionEl) positionEl.innerText = data.yourPosition || "--";
+            
+            console.log("✅ Queue numbers updated:", data);
         }
     } catch (err) {
-        console.log("Queue refresh failed (server might be down)");
+        console.error("❌ Failed to fetch queue status:", err);
+    }
+}
+
+async function loadDoctors() {
+    const select = document.getElementById('doctorSelect');
+    if (!select) return;
+
+    try {
+        const res = await fetch(DOCTOR_API_URL);
+        const doctors = await res.json();
+
+        select.innerHTML = '<option value="">-- Choose a Doctor --</option>';
+        doctors.forEach(doc => {
+            const opt = document.createElement('option');
+            opt.value = doc._id; 
+            opt.textContent = `${doc.name} (${doc.specialization})`;
+            select.appendChild(opt);
+        });
+    } catch (err) {
+        select.innerHTML = '<option value="">Error loading doctors</option>';
     }
 }

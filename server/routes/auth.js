@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const User = require('../models/Schemas').User; // Ensure this points to your correct Schema file
 
 // Register
 router.post('/register', async (req, res) => {
@@ -17,8 +17,17 @@ router.post('/register', async (req, res) => {
         user = new User({ name, email, password: hashedPassword, role: role || 'patient' });
         await user.save();
 
-        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
-        res.json({ token, user: { id: user._id, name: user.name, role: user.role } });
+        const token = jwt.sign(
+            { id: user._id, role: user.role, email: user.email }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: '1d' }
+        );
+
+        // ✅ ADDED EMAIL HERE
+        res.json({ 
+            token, 
+            user: { id: user._id, name: user.name, role: user.role, email: user.email } 
+        });
     } catch (err) {
         console.error('Registration error:', err);
         res.status(500).json({ message: 'Server error' });
@@ -35,8 +44,17 @@ router.post('/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
-        res.json({ token, user: { id: user._id, name: user.name, role: user.role } });
+        const token = jwt.sign(
+            { id: user._id, role: user.role, email: user.email }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: '1d' }
+        );
+
+        // ✅ ADDED EMAIL HERE
+        res.json({ 
+            token, 
+            user: { id: user._id, name: user.name, role: user.role, email: user.email } 
+        });
     } catch (err) {
         res.status(500).json({ message: 'Server error' });
     }

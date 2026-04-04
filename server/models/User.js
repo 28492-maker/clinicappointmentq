@@ -5,7 +5,6 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Name is required'],
         trim: true,
-        minlength: [2, 'Name must be at least 2 characters'],
         maxlength: [50, 'Name cannot exceed 50 characters']
     },
     email: {
@@ -20,7 +19,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Password is required'],
         minlength: [6, 'Password must be at least 6 characters'],
-        select: false 
+        select: false // Keeps password hidden from queries by default
     },
     role: {
         type: String,
@@ -30,27 +29,30 @@ const userSchema = new mongoose.Schema({
     }
 }, {
     timestamps: true,
-    // This is the CRITICAL fix:
+    // This ensures that when we send 'user' to the frontend, 
+    // all fields (including the email) are included.
     toJSON: { 
         virtuals: true,
         transform: function(doc, ret) {
-            ret.id = ret._id; // Explicitly map _id to id
+            ret.id = ret._id;
+            delete ret._id;
+            delete ret.__v;
+            delete ret.password; // Extra safety
             return ret;
         }
-    },
-    toObject: { virtuals: true }
+    }
 });
 
 /**
- * Instance method to return public user profile
+ * Force-builds a profile object to send to the Frontend.
+ * Use this in your Login/Register routes!
  */
 userSchema.methods.getPublicProfile = function() {
     return {
         id: this._id,
         name: this.name,
-        email: this.email,
-        role: this.role,
-        createdAt: this.createdAt
+        email: this.email, // 👈 This explicitly grabs the email from DB
+        role: this.role
     };
 };
 
